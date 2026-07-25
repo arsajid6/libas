@@ -1,0 +1,200 @@
+.shop-page {
+  padding-top: 0;
+}
+
+.shop-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.shop-header h1 {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.shop-header p {
+  color: var(--color-text-light);
+}
+
+.shop-layout {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Toolbar */
+.shop-toolbar-wrapper {
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 32px;
+  padding-bottom: 16px;
+}
+
+.shop-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.toolbar-left, .toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.filter-dropdown, .sort-dropdown-container {
+  position: relative;
+}
+
+.filter-toggle-btn, .sort-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  color: var(--color-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.filter-toggle-btn:hover, .sort-toggle-btn:hover {
+  color: var(--color-text-light);
+}
+
+.filter-dropdown-menu, .sort-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 12px;
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  min-width: 220px;
+  z-index: 100;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  padding: 12px 0;
+}
+
+.sort-dropdown-container .sort-dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+.items-count {
+  font-size: 14px;
+  color: var(--color-text-light);
+}
+
+.grid-toggles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.grid-btn {
+  color: #a0aec0;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+}
+
+.grid-btn.active, .grid-btn:hover {
+  color: var(--color-text);
+  background: #e2e8f0;
+}
+
+/* Filter styles inside dropdown */
+.filter-options-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 16px;
+}
+
+.filter-checkbox:hover {
+  background-color: #f8fafc;
+}
+
+.sort-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--color-text);
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+.sort-option:hover {
+  background-color: #f8fafc;
+}
+.sort-option.active {
+  font-weight: 500;
+}
+
+.check-icon {
+  margin-right: 8px;
+}
+
+.shop-grid-main {
+  flex: 1;
+}
+
+.products-grid-5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 20px;
+}
+
+.products-grid-10 {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 12px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 60px 0;
+  color: var(--color-text-light);
+}
+
+@media (max-width: 900px) {
+  .shop-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .sort-dropdown-container .sort-dropdown-menu {
+    left: 0;
+    right: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .products-grid-5 {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .products-grid-10 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+  }
+  
+  /* The small images might have huge buttons, let's fix that in ProductCard.css, but for the grid: */
+  .shop-header h1 {
+    font-size: 2rem;
+  }
+}

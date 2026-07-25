@@ -1,0 +1,76 @@
+.product-form .form-group {
+  margin-bottom: 20px;
+}
+
+.product-form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.product-form input, .product-form textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  font-family: var(--font-body);
+}
+
+.variants-section {
+  background-color: #faf9f6;
+  padding: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-top: 24px;
+}
+
+.variant-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.remove-variant-btn {
+  color: #ff4444;
+  padding: 8px;
+}
+
+.remove-variant-btn:hover {
+  background-color: rgba(255, 68, 68, 0.1);
+  border-radius: 4px;
+}
+
+.image-upload-area {
+  border: 2px dashed var(--color-border);
+  padding: 40px;
+  text-align: center;
+  border-radius: 8px;
+  background-color: #faf9f6;
+  transition: border-color 0.3s;
+}
+
+.image-upload-area:hover {
+  border-color: var(--color-text);
+}
+
+.upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  color: var(--color-text-light);
+}
+
+.pm-grid-2 { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+.pm-grid-4 { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr; gap: 16px; }
+.pm-grid-size { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 16px; margin-bottom: 16px; align-items: end; background: #fff; padding: 16px; border-radius: 6px; border: 1px solid #cbd5e1; position: relative; }
+.pm-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+@media (max-width: 768px) {
+  .pm-grid-2, .pm-grid-4, .pm-grid-size, .pm-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
