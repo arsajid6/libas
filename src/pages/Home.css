@@ -31,19 +31,17 @@
   background-color: #f5f0e8;
 }
 
-/* Image container */
 .hero-image-panel {
   position: relative;
   width: 100%;
-  height: 82vh;
-  min-height: 400px;
+  height: auto;
+  display: flex;
 }
 
 .hero-full-img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
+  height: auto;
+  object-fit: contain;
   display: block;
   opacity: 0;
   transition: opacity 0.9s ease-in-out;
@@ -420,12 +418,12 @@
     max-height: none;
   }
   .hero-image-panel {
-    height: 60vw;
-    min-height: 250px;
+    height: auto;
+    min-height: 0;
   }
   .hero-full-img {
     object-fit: contain;
-    background-color: #f1ebd8;
+    background-color: transparent;
   }
   .hero-arrow {
     width: 32px;
