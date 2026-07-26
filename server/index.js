@@ -480,12 +480,12 @@ app.listen(PORT, async () => {
   try {
     await getDb();
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`Server running on port ${PORT} and SQLite DB initialized`);
+      console.log(`Server running on port ${PORT} and Database initialized`);
     } else {
-      console.error(`Production Server started on port ${PORT}`); // Use console.error for structured prod logs if typical
+      console.log(`Production Server started on port ${PORT}`);
     }
   } catch (err) {
-    console.error('Failed to initialize SQLite database', err);
+    console.error('Failed to initialize database', err);
     process.exit(1);
   }
 });
