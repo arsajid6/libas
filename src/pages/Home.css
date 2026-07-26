@@ -415,15 +415,25 @@
 }
 
 @media (max-width: 768px) {
-  .hero-banner {
-    height: 380px;
+  .hero-slider {
+    height: auto;
+    max-height: none;
   }
-  .hero-overlay {
-    padding: 0 32px;
+  .hero-image-panel {
+    height: 60vw;
+    min-height: 250px;
   }
-  .hero-title {
-    font-size: 2.5rem;
+  .hero-full-img {
+    object-fit: contain;
+    background-color: #f1ebd8;
   }
+  .hero-arrow {
+    width: 32px;
+    height: 32px;
+  }
+  .hero-arrow.left { left: 8px; }
+  .hero-arrow.right { right: 8px; }
+  
   .collections-grid {
     grid-template-columns: 1fr;
     gap: 12px;
