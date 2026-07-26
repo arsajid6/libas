@@ -22,20 +22,34 @@ const HeroManager = () => {
     }
   };
 
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+
   const handleUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     setIsUploading(true);
-    const data = new FormData();
-    data.append('image', file);
-
+    
     try {
+      const base64 = await fileToBase64(file);
+      const payload = {
+        image_base64: base64,
+        image_filename: file.name
+      };
+
       const token = sessionStorage.getItem('adminToken');
       const res = await fetch(`${BASE_URL}/admin/hero`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: data
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         fetchSlides();
@@ -43,6 +57,7 @@ const HeroManager = () => {
         alert('Failed to upload slide');
       }
     } catch (err) {
+      console.error(err);
       alert('Error uploading slide');
     } finally {
       setIsUploading(false);

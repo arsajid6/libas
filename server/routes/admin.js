@@ -94,12 +94,12 @@ router.get('/products', async (req, res) => {
   }
 });
 
-router.post('/products', upload.array('images', 5), async (req, res) => {
+router.post('/products', async (req, res) => {
   try {
     const db = await getDb();
     await db.run('BEGIN TRANSACTION');
 
-    const { name, description, base_price, sale_price, fabric, sku, categories, low_stock_threshold, variants } = req.body;
+    const { name, description, base_price, sale_price, fabric, sku, categories, low_stock_threshold, variants, images_base64 } = req.body;
     
     const productResult = await db.run(
       'INSERT INTO products (name, description, base_price, sale_price, fabric, sku, category, low_stock_threshold) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -108,7 +108,7 @@ router.post('/products', upload.array('images', 5), async (req, res) => {
     const productId = productResult.lastID;
 
     if (variants) {
-      const parsedVariants = JSON.parse(variants);
+      const parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
       for (const variant of parsedVariants) {
         const stockQty = Number(variant.stock_quantity || variant.stock || 0);
         await db.run(
@@ -118,15 +118,42 @@ router.post('/products', upload.array('images', 5), async (req, res) => {
       }
     }
 
-    if (req.files && req.files.length > 0) {
-      for (let i = 0; i < req.files.length; i++) {
-        const file = req.files[i];
-        const imageUrl = file.filename; // Now holds absolute Supabase URL
-        const isPrimary = i === 0 ? 1 : 0;
-        await db.run(
-          'INSERT INTO product_images (product_id, image_url, is_primary) VALUES (?, ?, ?)',
-          [productId, imageUrl, isPrimary]
-        );
+    if (images_base64 && Array.isArray(images_base64) && images_base64.length > 0) {
+      const { createClient } = require('@supabase/supabase-js');
+      const supabaseUrl = 'https://vqzagnqoxmlffhjbnrxp.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxemFnbnFveG1sZmZoamJucnhwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDc1MjIyNCwiZXhwIjoyMTAwMzI4MjI0fQ.xKOCwj1hzivN8EYpJhl0zJB515FCU-HH-JKUUpwSBAw';
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      for (let i = 0; i < images_base64.length; i++) {
+        const imgObj = images_base64[i];
+        let imageUrl = '';
+
+        const matches = imgObj.base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const contentType = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+          
+          const ext = require('path').extname(imgObj.filename || '.png');
+          const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + ext;
+          
+          const { data, error } = await supabase.storage.from('images').upload(filename, buffer, {
+            contentType: contentType,
+            upsert: true
+          });
+          
+          if (!error) {
+            const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(filename);
+            imageUrl = publicUrlData.publicUrl;
+          }
+        }
+
+        if (imageUrl) {
+          const isPrimary = i === 0 ? 1 : 0;
+          await db.run(
+            'INSERT INTO product_images (product_id, image_url, is_primary) VALUES (?, ?, ?)',
+            [productId, imageUrl, isPrimary]
+          );
+        }
       }
     }
 
@@ -573,11 +600,39 @@ router.post('/menu/reorder', async (req, res) => {
 // HERO SLIDER ROUTES
 // ==========================================
 
-router.post('/hero', upload.single('image'), async (req, res) => {
+router.post('/hero', async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: 'No image uploaded' });
+    const { image_base64, image_filename } = req.body;
+    if (!image_base64) return res.status(400).json({ error: 'No image uploaded' });
+    
+    let imageUrl = '';
+    const matches = image_base64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (matches && matches.length === 3) {
+      const contentType = matches[1];
+      const buffer = Buffer.from(matches[2], 'base64');
+      
+      const ext = require('path').extname(image_filename || '.png');
+      const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + ext;
+      
+      const { createClient } = require('@supabase/supabase-js');
+      const supabaseUrl = 'https://vqzagnqoxmlffhjbnrxp.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxemFnbnFveG1sZmZoamJucnhwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDc1MjIyNCwiZXhwIjoyMTAwMzI4MjI0fQ.xKOCwj1hzivN8EYpJhl0zJB515FCU-HH-JKUUpwSBAw';
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      const { data, error } = await supabase.storage.from('images').upload(filename, buffer, {
+        contentType: contentType,
+        upsert: true
+      });
+      
+      if (error) throw error;
+      
+      const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(filename);
+      imageUrl = publicUrlData.publicUrl;
+    } else {
+      return res.status(400).json({ error: 'Invalid image format' });
+    }
+
     const db = await getDb();
-    const imageUrl = req.file.filename;
     
     // get max sort order
     const row = await db.get('SELECT MAX(sort_order) as maxSort FROM hero_slides');

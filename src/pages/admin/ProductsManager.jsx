@@ -72,34 +72,51 @@ const ProductsManager = () => {
   
   const removeVariant = (index) => setVariants(variants.filter((_, i) => i !== index));
 
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
+  });
+
   const handleSave = async () => {
     if (!formData.name || !formData.base_price || !formData.description) {
-      alert("Please fill in the required fields: Name, Regular Price, and Description.");
+      alert('Please fill in the required fields: Name, Regular Price, and Description.');
       return;
     }
 
     try {
       setIsSubmitting(true);
-      const data = new FormData();
-      data.append('name', formData.name);
-      data.append('description', formData.description);
-      data.append('base_price', formData.base_price);
-      if (formData.sale_price) data.append('sale_price', formData.sale_price);
-      if (formData.fabric) data.append('fabric', formData.fabric);
-      if (formData.sku) data.append('sku', formData.sku);
-      data.append('categories', JSON.stringify(categories));
-      if (lowStockThreshold) data.append('low_stock_threshold', lowStockThreshold);
-      data.append('variants', JSON.stringify(variants));
       
-      images.forEach(img => {
-        data.append('images', img);
-      });
+      const images_base64 = await Promise.all(images.map(async img => {
+        const base64 = await fileToBase64(img);
+        return {
+          base64: base64,
+          filename: img.name
+        };
+      }));
+
+      const payload = {
+        name: formData.name,
+        description: formData.description,
+        base_price: formData.base_price,
+        sale_price: formData.sale_price,
+        fabric: formData.fabric,
+        sku: formData.sku,
+        categories: JSON.stringify(categories),
+        low_stock_threshold: lowStockThreshold,
+        variants: JSON.stringify(variants),
+        images_base64: images_base64
+      };
 
       const token = sessionStorage.getItem('adminToken');
       const res = await fetch(`${BASE_URL}/admin/products`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: data
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
