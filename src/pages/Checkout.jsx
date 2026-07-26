@@ -116,44 +116,88 @@ const Checkout = () => {
 
     const totals = calculateTotals();
 
-    const formDataToSend = new FormData();
-    formDataToSend.append('user_id', user ? user.id : '');
-    formDataToSend.append('customer_name', formData.fullName);
-    formDataToSend.append('email', formData.email);
-    formDataToSend.append('phone', formData.phone);
-    formDataToSend.append('city', formData.city);
-    formDataToSend.append('area', formData.area);
-    formDataToSend.append('address', formData.address);
-    formDataToSend.append('payment_method', formData.paymentMethod);
-    formDataToSend.append('order_notes', formData.orderNotes);
-    formDataToSend.append('total_amount', totals.grandTotal);
-    formDataToSend.append('shipping_cost', totals.shippingCost);
-    formDataToSend.append('cod_fee', totals.codFee);
-    formDataToSend.append('discount', totals.discount);
+    const payload = {
+      user_id: user ? user.id : '',
+      customer_name: formData.fullName,
+      email: formData.email,
+      phone: formData.phone,
+      city: formData.city,
+      area: formData.area,
+      address: formData.address,
+      payment_method: formData.paymentMethod,
+      order_notes: formData.orderNotes,
+      total_amount: totals.grandTotal,
+      shipping_cost: totals.shippingCost,
+      cod_fee: totals.codFee,
+      discount: totals.discount,
+      items: cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        selectedSize: item.size,
+        selectedColor: item.color,
+        quantity: item.quantity,
+        price: item.sale_price ? Number(item.sale_price) : Number(item.base_price),
+        image: item.image || (item.images && item.images.length > 0 ? item.images[0] : null)
+      }))
+    };
     
     if (formData.paymentMethod === 'Bank Transfer') {
-      if (formData.paymentProof) {
-        formDataToSend.append('paymentProof', formData.paymentProof);
-      }
       if (formData.transactionRef) {
-        formDataToSend.append('transaction_reference', formData.transactionRef);
+        payload.transaction_reference = formData.transactionRef;
+      }
+      if (formData.paymentProof) {
+        // Compress image using Canvas
+        const compressImage = file => new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let width = img.width;
+              let height = img.height;
+              const maxDim = 1200;
+              
+              if (width > height && width > maxDim) {
+                height *= maxDim / width;
+                width = maxDim;
+              } else if (height > maxDim) {
+                width *= maxDim / height;
+                height = maxDim;
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              // Output as JPEG with 0.8 quality to guarantee small size
+              resolve(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            img.onerror = (e) => reject(e);
+          };
+          reader.onerror = error => reject(error);
+        });
+        
+        try {
+          const base64Str = await compressImage(formData.paymentProof);
+          payload.paymentProofBase64 = base64Str;
+          payload.paymentProofFileName = formData.paymentProof.name.replace(/\.[^/.]+$/, "") + ".jpg";
+        } catch (err) {
+          alert("Failed to process the payment proof image.");
+          setIsProcessing(false);
+          return;
+        }
       }
     }
-    
-    formDataToSend.append('items', JSON.stringify(cartItems.map(item => ({
-      id: item.id,
-      name: item.name,
-      selectedSize: item.size,
-      selectedColor: item.color,
-      quantity: item.quantity,
-      price: item.sale_price ? Number(item.sale_price) : Number(item.base_price),
-      image: item.image || (item.images && item.images.length > 0 ? item.images[0] : null)
-    }))));
 
     try {
       const res = await fetch(`${BASE_URL}/public/checkout`, {
         method: 'POST',
-        body: formDataToSend
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
       
       if (res.ok) {

@@ -174,28 +174,18 @@ app.get('/api/public/payments/config', async (req, res) => {
   }
 });
 
-const checkoutUploadMiddleware = (req, res, next) => {
-  upload.single('paymentProof')(req, res, function (err) {
-    if (err instanceof multer.MulterError) {
-      return res.status(400).json({ error: 'File upload error: ' + err.message + '. Please ensure the file is under 5MB.' });
-    } else if (err) {
-      return res.status(400).json({ error: err.message });
-    }
-    next();
-  });
-};
-
-app.post('/api/public/checkout', checkoutUploadMiddleware, async (req, res) => {
+app.post('/api/public/checkout', async (req, res) => {
   try {
     const db = await getDb();
     let { 
       user_id, customer_name, email, phone, city, area, address, 
-      payment_method, order_notes, total_amount, shipping_cost, cod_fee, discount, items, transaction_reference
+      payment_method, order_notes, total_amount, shipping_cost, cod_fee, discount, items, transaction_reference,
+      paymentProofBase64, paymentProofFileName
     } = req.body;
 
-    // items is a JSON string when sent via FormData
+    // items should already be parsed as it's JSON
     if (typeof items === 'string') {
-      items = JSON.parse(items);
+      try { items = JSON.parse(items); } catch(e) {}
     }
 
     let payment_status = 'Pending';
@@ -205,8 +195,37 @@ app.post('/api/public/checkout', checkoutUploadMiddleware, async (req, res) => {
       payment_status = 'COD Pending';
     } else if (payment_method === 'Bank Transfer') {
       payment_status = 'Pending Verification';
-      if (req.file) {
-        paymentProofImage = req.file.filename;
+      
+      if (paymentProofBase64) {
+        // Upload base64 image to Supabase
+        try {
+          const { createClient } = require('@supabase/supabase-js');
+          const supabaseUrl = 'https://vqzagnqoxmlffhjbnrxp.supabase.co';
+          const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZxemFnbnFveG1sZmZoamJucnhwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NDc1MjIyNCwiZXhwIjoyMTAwMzI4MjI0fQ.xKOCwj1hzivN8EYpJhl0zJB515FCU-HH-JKUUpwSBAw';
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          
+          // Data URL format: data:image/png;base64,iVBORw0KGgo...
+          const matches = paymentProofBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+          if (matches && matches.length === 3) {
+            const contentType = matches[1];
+            const buffer = Buffer.from(matches[2], 'base64');
+            
+            const ext = require('path').extname(paymentProofFileName || '.png');
+            const filename = Date.now() + '-' + Math.round(Math.random() * 1E9) + ext;
+            
+            const { data, error } = await supabase.storage.from('images').upload(filename, buffer, {
+              contentType: contentType,
+              upsert: true
+            });
+            
+            if (!error) {
+              const { data: publicUrlData } = supabase.storage.from('images').getPublicUrl(filename);
+              paymentProofImage = publicUrlData.publicUrl;
+            }
+          }
+        } catch (err) {
+          console.error("Error uploading payment proof to Supabase:", err);
+        }
       }
     } else if (payment_method === 'Online Payment') {
       // Validate if online payment is even active
