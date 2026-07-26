@@ -82,6 +82,16 @@ const Checkout = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
+    
+    if (type === 'file' && files.length > 0) {
+      const file = files[0];
+      if (file.size > 10 * 1024 * 1024) {
+        alert("File is too large. Please select an image under 10MB.");
+        e.target.value = null; // Clear input
+        return;
+      }
+    }
+    
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value
@@ -492,7 +502,7 @@ const Checkout = () => {
                           <div className="form-group" style={{ margin: 0 }}>
                             <label style={{...labelStyle, color: '#334155'}}>Upload Payment Proof *</label>
                             <input type="file" name="paymentProof" accept="image/*" required onChange={handleChange} style={{...inputStyle, padding: '8px'}} />
-                            <small style={{ color: '#64748b', fontSize: '12px', display: 'block', marginTop: '4px' }}>Please upload a screenshot of your successful transaction.</small>
+                            <small style={{ color: '#64748b', fontSize: '12px', display: 'block', marginTop: '4px' }}>Please upload a screenshot of your successful transaction. (Max 10MB)</small>
                           </div>
                         </div>
                       )}
